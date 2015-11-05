@@ -17,6 +17,20 @@ public class Main {
         stmt.execute();
     }
 
+    public static Country selectCountry(Connection conn, int id) throws SQLException {
+        Country country = null;
+        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM countries WHERE id = ?");
+        stmt.setInt(1, id);
+        ResultSet results = stmt.executeQuery();
+        if (results.next()) {
+            country = new Country();
+            country.id = results.getInt("id");
+            country.name = results.getString("name");
+            country.abbrev = results.getString("abbrev");
+        }
+        return country;
+    }
+
     public static ArrayList<Country> selectCountries(Connection conn) throws SQLException {
         ArrayList<Country> countries = new ArrayList();
         PreparedStatement stmt = conn.prepareStatement("SELECT * FROM countries");
