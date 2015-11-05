@@ -1,5 +1,8 @@
 package com.theironyard;
 
+import jodd.json.JsonSerializer;
+import spark.Spark;
+
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -49,5 +52,62 @@ public class Main {
         // open database
         Connection conn = DriverManager.getConnection("jdbc:h2:./main");
         createTables(conn);
+
+
+        //serve external files
+        Spark.externalStaticFileLocation("public");
+        Spark.init();
+
+        //insert test data
+        if (selectCountries(conn).size() == 0) {
+            insertCountry(conn, "United States", "US");
+            insertCountry(conn, "Canada", "CA");
+            insertCountry(conn, "Mexico", "MX");
+        }
+
+
+        //create routes for AJAX
+
+
+        Spark.get(
+                "/get-countries",
+                ((request, response) -> {
+                    JsonSerializer serializer = new JsonSerializer();
+                    String json = serializer.serialize(selectCountries(conn));
+                    return json;
+                })
+
+        );
+
+        Spark.get(
+                "/get-country",
+                ((request, response) -> {
+                    String id = request.queryParams("id");
+                    try {
+                        int idNum = Integer.valueOf(id);
+                        JsonSerializer serializer = new JsonSerializer();
+                        String json = serializer.serialize(selectCountry(conn, idNum));
+                        return json;
+                    } catch (Exception e){
+
+                    }
+                    return "";
+                })
+        );
+
+
+        Spark.post(
+                "/add-country",
+                ((request, response) -> {
+                    String name = request.queryParams("name");
+                    String abbrev = request.queryParams("abbrev");
+                    if (name == null || abbrev == null) {
+                        Spark.halt(403);
+                    }
+                    insertCountry(conn, name, abbrev);
+                    return "";
+                })
+        );
     }
+
 }
